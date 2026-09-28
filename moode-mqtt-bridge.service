@@ -1,0 +1,14 @@
+[Unit]
+Description=moOde MQTT bridge (Bluetooth/AirPlay state + commands)
+After=network-online.target bluetooth.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/moode-mqtt-bridge.sh
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target

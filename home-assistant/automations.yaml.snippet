@@ -1,0 +1,150 @@
+# Home Assistant — automations.yaml
+# -------------------------------------------------------------------
+# Reference snippet. Append to your config/automations.yaml.
+#
+# Entity IDs assumed:
+#   sensor.0xffffb40e0603ab7b_power                (projector smart plug power, W)
+#   media_player.onn_streaming_device_4k_pro       (Android TV / Google TV source)
+#   binary_sensor.moode_bluetooth                  (from configuration.yaml.snippet)
+#   binary_sensor.moode_airplay_active             (from configuration.yaml.snippet)
+#
+# Adjust the entity IDs for your own devices.
+
+# --- moOde control (Bluetooth + AirPlay) --------------------------------
+
+- id: '1783000000001'
+  alias: moOde - TV on - Bluetooth on and connect
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.0xffffb40e0603ab7b_power
+    above: 75
+    for:
+      seconds: 5
+  conditions: []
+  actions:
+  - action: mqtt.publish
+    data:
+      topic: moode/cmd
+      payload: tv_on
+      retain: false
+  mode: single
+
+- id: '1783000000002'
+  alias: moOde - TV off - Bluetooth disconnect and off
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.0xffffb40e0603ab7b_power
+    below: 20
+    for:
+      seconds: 5
+  conditions: []
+  actions:
+  - action: mqtt.publish
+    data:
+      topic: moode/cmd
+      payload: tv_off
+      retain: false
+  mode: single
+
+- id: '1783000000003'
+  alias: moOde - Kick idle AirPlay session after 20 min
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.moode_airplay_active
+    to: 'off'
+    for:
+      minutes: 20
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.moode_airplay_active
+    state: 'off'
+    for:
+      minutes: 20
+  actions:
+  - action: mqtt.publish
+    data:
+      topic: moode/cmd
+      payload: airplay_kick
+      retain: false
+  mode: single
+
+# --- moOde control driven by the Android TV entity ----------------------
+
+- id: '1783000000006'
+  alias: moOde - onn TV off - Bluetooth disconnect and off
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: media_player.onn_streaming_device_4k_pro
+    from: 'on'
+    to:
+    - 'off'
+    - 'standby'
+    for:
+      seconds: 10
+  conditions: []
+  actions:
+  - action: mqtt.publish
+    data:
+      topic: moode/cmd
+      payload: tv_off
+      retain: false
+  mode: single
+
+- id: '1783000000007'
+  alias: moOde - onn TV on - Bluetooth on and connect (projector powered)
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id: media_player.onn_streaming_device_4k_pro
+    to: 'on'
+    for:
+      seconds: 2
+  conditions:
+  - condition: numeric_state
+    entity_id: sensor.0xffffb40e0603ab7b_power
+    above: 75
+  actions:
+  - action: mqtt.publish
+    data:
+      topic: moode/cmd
+      payload: tv_on
+      retain: false
+  mode: single
+
+# --- Android TV power management (driven by the projector plug) ---------
+
+- id: '1783000000008'
+  alias: onn TV - Turn off when projector powered off
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.0xffffb40e0603ab7b_power
+    below: 20
+    for:
+      seconds: 15
+  conditions: []
+  actions:
+  - action: media_player.turn_off
+    target:
+      entity_id: media_player.onn_streaming_device_4k_pro
+  mode: single
+
+- id: '1783000000009'
+  alias: onn TV - Turn on when projector powered on
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.0xffffb40e0603ab7b_power
+    above: 20
+    for:
+      seconds: 5
+  conditions: []
+  actions:
+  - action: media_player.turn_on
+    target:
+      entity_id: media_player.onn_streaming_device_4k_pro
+  mode: single

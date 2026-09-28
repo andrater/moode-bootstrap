@@ -1,0 +1,20 @@
+# Home Assistant — configuration.yaml
+# -------------------------------------------------------------------
+# Reference snippet. Append this to your config/configuration.yaml.
+# The MQTT integration must already be configured (Settings > Devices &
+# Services > MQTT). These entities are populated by the bridge running on
+# the moOde Pi.
+
+mqtt:
+  binary_sensor:
+    - name: "moOde Bluetooth"
+      unique_id: moode_bluetooth
+      state_topic: "moode/bluetooth/state"
+      payload_on: "connected"
+      payload_off: "disconnected"
+      device_class: connectivity
+    - name: "moOde AirPlay Active"
+      unique_id: moode_airplay_active
+      state_topic: "moode/airplay/active"
+      payload_on: "on"
+      payload_off: "off"

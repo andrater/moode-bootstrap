@@ -1,0 +1,23 @@
+# /etc/moode-mqtt-bridge.conf
+# Configuration for moode-mqtt-bridge.sh (installed by install.sh).
+
+# REQUIRED ---------------------------------------------------------------
+# LAN IP/hostname of the machine running your MQTT broker (your HA/Docker host).
+MQTT_HOST="192.168.1.200"
+
+# Bluetooth MAC of the TV / streaming device that connects to moOde.
+# Find it on the Pi with:  bluetoothctl devices Paired
+TV_MAC="44:87:63:39:09:DE"
+
+# OPTIONAL ---------------------------------------------------------------
+#MQTT_PORT="1883"
+#MQTT_USER=""
+#MQTT_PASS=""
+
+# Topic names (defaults shown)
+#STATE_TOPIC="moode/bluetooth/state"
+#APL_TOPIC="moode/airplay/active"
+#CMD_TOPIC="moode/cmd"
+
+# How often to poll the Bluetooth link state, in seconds.
+#POLL_SECS="5"
