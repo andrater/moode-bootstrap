@@ -64,16 +64,30 @@ It prompts for:
 1. **MQTT broker host** — the LAN IP of the machine running Mosquitto/HA.
 2. **TV/streaming-device Bluetooth MAC** — find it with `bluetoothctl devices Paired`.
 3. AirPlay idle timeout in seconds (default `1200` = 20 minutes).
+4. **Audio output device name** (default: whatever moOde currently has selected) —
+   e.g. `CA CXA81 2.0`. List names with `moodeutl --hwparams` or `aplay -l`.
+5. **Lock volume at 0dB** (default yes) — pins the MPD mixer to "Fixed (0dB)",
+   i.e. no volume control.
 
-It then installs `mosquitto-clients expect sqlite3`, installs the bridge and
-systemd unit, writes the config, sets the shairport-sync `session_timeout`, and
-starts the service.
+It then installs `mosquitto-clients expect sqlite3`, pins the audio device/volume
+via moOde autoconfig, installs the bridge and systemd unit, writes the config,
+sets the shairport-sync `session_timeout`, and starts the service. Reboot to
+apply the audio settings.
 
 Non-interactive:
 
 ```bash
-sudo MQTT_HOST=192.168.1.200 TV_MAC=44:87:63:39:09:DE ./install.sh
+sudo MQTT_HOST=192.168.1.200 TV_MAC=44:87:63:39:09:DE \
+     OUTPUT_DEVICE="CA CXA81 2.0" FIXED_VOLUME=yes ./install.sh
 ```
+
+### Audio device + fixed volume
+
+The installer writes `/boot/moodecfg.ini`, moOde's supported "autoconfig"
+mechanism, then runs `moodeutl -i`. moOde applies it and deletes the file. This
+pins the DAC by **name** (`adevname`), so it survives ALSA re-enumeration, and
+sets `mpdmixer`/`mixer_type` to `none` for Fixed (0dB). The device name default
+is read from the running config, so just press Enter to keep the current one.
 
 ## Configuration
 
@@ -151,6 +165,9 @@ sudo ./uninstall.sh --purge    # remove config too
 - AirPlay idle: `session_timeout` in `/etc/shairport-sync.conf`
   (moOde default `60`; set `1200` for 20 min).
 - `blu-control.sh -C` uses `expect` and can block, so calls are wrapped in `timeout`.
+- Audio device/volume: moOde autoconfig `/boot/moodecfg.ini`
+  (`adevname`, `mpdmixer`, `cardnum`, and `cfg_mpd` `device`/`mixer_type`),
+  applied by `sudo moodeutl -i`. `mixer_type = none` is "Fixed (0dB)".
 
 ## Caveats
 
@@ -160,5 +177,9 @@ sudo ./uninstall.sh --purge    # remove config too
   sender may keep the session. The HA 20-min `airplay_kick` automation covers that.
 - Running `moodeutl -Ro ... on` when already on, or `-D` when nothing is
   connected, is harmless.
+- **Fixed (0dB)** is full-scale output, not an arbitrary level. Use an upstream
+  volume control if you need attenuation.
+- The card number can shift when USB devices re-enumerate; moOde resolves the
+  device by name (`adevname`) at boot, which is why the installer pins that.
 - Bluetooth on the Pi is what matters for freeing the DAC; the TV's own view can
   disagree (that mismatch is the original bug).
